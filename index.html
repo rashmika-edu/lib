@@ -302,17 +302,19 @@ async function submitAddBook() {
 
     if(!t) return alert("Resource Title is required.");
 
-    // Now that the column exists, we can safely include user_id
+    // We explicitly send 'AVAILABLE' in uppercase to match the DB constraint
     const { error } = await _supabase.from('books').insert([{ 
         title: t, 
         isbn: i, 
-        status: 'AVAILABLE',
-        user_id: userProfile.id // Tracks who added the book
+        status: 'AVAILABLE', 
+        user_id: userProfile.id 
     }]);
 
     if (error) {
-        alert("Failed to add book: " + error.message);
+        console.error(error);
+        alert("Error: " + error.message);
     } else { 
+        alert("Asset saved successfully!");
         titleInput.value = '';
         isbnInput.value = '';
         closeModal('add-book-modal'); 
