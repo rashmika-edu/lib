@@ -195,6 +195,7 @@
             if (error) alert(error.message); else { alert("Successful! Please sign in."); toggleAuth(false); }
         }
 
+        // NEW: Admin function to add staff
         async function submitAddStaff() {
             const name = document.getElementById('admin-reg-name').value;
             const email = document.getElementById('admin-reg-email').value;
@@ -232,10 +233,10 @@
 
             if (userProfile.role === 'Admin') {
                 document.getElementById('nav-admin').classList.remove('hidden');
+                document.getElementById('btn-add-book').classList.remove('hidden');
                 document.getElementById('btn-add-staff').classList.remove('hidden');
             }
             if (userProfile.role === 'Admin' || userProfile.role === 'Librarian') {
-                document.getElementById('btn-add-book').classList.remove('hidden');
                 document.getElementById('btn-issue').classList.remove('hidden');
                 document.getElementById('th-actions').classList.remove('hidden');
             }
@@ -294,57 +295,28 @@
             if (error) alert(error.message); else fetchData();
         }
 
-// FIXED: Confirm Issue Button
-async function submitIssue() {
-    const bookId = document.getElementById('issue-book-select').value;
-    const studentName = document.getElementById('issue-student').value;
+        async function submitAddBook() {
+            const t = document.getElementById('new-book-title').value;
+            const i = document.getElementById('new-book-isbn').value;
+            const { error } = await _supabase.from('books').insert([{ title: t, isbn: i, status: 'AVAILABLE' }]);
+            if (!error) { closeModal('add-book-modal'); fetchData(); }
+        }
 
-    if (!bookId || !studentName) {
-        return alert("Please select a book and enter a recipient name.");
-    }
+        async function submitIssue() {
+            const bid = document.getElementById('issue-book-select').value;
+            const s = document.getElementById('issue-student').value;
+            const { error } = await _supabase.from('books').update({ status: 'LOANED', issued_to: s }).eq('id', bid);
+            if (!error) { closeModal('issue-modal'); fetchData(); }
+        }
 
-    const { error } = await _supabase
-        .from('books')
-        .update({ 
-            status: 'LOANED', 
-            issued_to: studentName 
-        })
-        .eq('id', bookId);
-
-    if (error) {
-        console.error("Issue Error:", error);
-        alert("Failed to issue: " + error.message);
-    } else {
-        alert("Resource issued successfully!");
-        closeModal('issue-modal');
-        fetchData(); // Refresh the list
-    }
-}
-
-// FIXED: Save Asset Button
-async function submitAddBook() {
-    const title = document.getElementById('new-book-title').value;
-    const isbn = document.getElementById('new-book-isbn').value;
-
-    if (!title) return alert("Resource Title is required.");
-
-    const { error } = await _supabase.from('books').insert([{ 
-        title: title, 
-        isbn: isbn, 
-        status: 'AVAILABLE',
-        user_id: userProfile.id 
-    }]);
-
-    if (error) {
-        console.error("Add Error:", error);
-        alert("Failed to save: " + error.message);
-    } else { 
-        document.getElementById('new-book-title').value = '';
-        document.getElementById('new-book-isbn').value = '';
-        closeModal('add-book-modal'); 
-        fetchData(); 
-    }
-}
+        async function handleReturn(id) { await _supabase.from('books').update({ status: 'AVAILABLE', issued_to: null }).eq('id', id); fetchData(); }
+        async function handleDeleteBook(id) { if(confirm("Delete asset?")) { await _supabase.from('books').delete().eq('id', id); fetchData(); } }
+        function filterByISBN() { const q = document.getElementById('isbn-search').value.toLowerCase(); renderBooks(allBooks.filter(b => (b.isbn || '').toLowerCase().includes(q))); }
+        function toggleAuth(s) { document.getElementById('login-form').classList.toggle('hidden', s); document.getElementById('register-form').classList.toggle('hidden', !s); }
+        async function handleLogout() { await _supabase.auth.signOut(); window.location.reload(); }
+        function switchView(id) { ['dash', 'books', 'users'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); document.getElementById(`view-${id}`).classList.remove('hidden'); }
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
     </script>
 </body>
 </html>
