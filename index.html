@@ -153,6 +153,33 @@
             if (error) alert(error.message); else fetchProfile(data.user);
         }
 
+        async function handleRegister() {
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-pass').value;
+            const role = document.getElementById('reg-role').value;
+
+            if (!name || !email || !pass) return alert("Please fill all fields");
+
+            const { data, error } = await _supabase.auth.signUp({
+                email: email,
+                password: pass,
+                options: {
+                    data: {
+                        full_name: name,
+                        role: role
+                    }
+                }
+            });
+
+            if (error) {
+                alert(error.message);
+            } else {
+                alert("Registration successful! You can now sign in.");
+                toggleAuth(false);
+            }
+        }
+
         async function fetchProfile(u) {
             const { data } = await _supabase.from('profiles').select('*').eq('id', u.id).single();
             if (data) { userProfile = data; renderApp(); }
