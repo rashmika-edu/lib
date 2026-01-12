@@ -3,315 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina Pro | Live Enterprise</title>
+    <title>Lumina Pro | School Library Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
-    
     <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background: #020617;
-            color: #f8fafc;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .glass {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-        }
-
-        .glass-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .input-field {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            padding: 0.75rem 1rem;
-            border-radius: 12px;
-            outline: none;
-            transition: all 0.3s;
-        }
-
-        .input-field:focus { border-color: #6366f1; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-view { animation: fadeIn 0.4s ease-out forwards; }
-        
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: #f8fafc; height: 100vh; overflow: hidden; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .input-field { background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 0.75rem 1rem; border-radius: 12px; outline: none; }
         .modal { backdrop-filter: blur(10px); display: none; }
         .modal.active { display: flex; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body class="flex p-6 gap-6">
 
-    <div id="config-overlay" class="fixed inset-0 z-[1000] bg-slate-950 flex items-center justify-center p-6">
-        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md border-t border-white/20 text-center">
-            <h2 class="text-2xl font-bold mb-2">Connect Supabase</h2>
-            <p class="text-slate-400 text-sm mb-6">Enter your project credentials to enable Realtime</p>
-            <input type="text" id="supa-url" placeholder="https://xyz.supabase.co" class="input-field w-full mb-3 text-xs">
-            <input type="password" id="supa-key" placeholder="Anon Public API Key" class="input-field w-full mb-6 text-xs">
-            <button onclick="initSupabase()" class="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-slate-200 transition">Connect & Launch</button>
+    <div id="login-screen" class="fixed inset-0 z-[2000] bg-slate-950 flex items-center justify-center p-6">
+        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md text-center">
+            <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-indigo-500/20">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            </div>
+            <h2 class="text-3xl font-black mb-2">Lumina Pro</h2>
+            <p class="text-slate-400 mb-8">Enterprise Resource Management</p>
+            <div class="space-y-3">
+                <input type="email" id="login-email" placeholder="Email Address" class="input-field w-full">
+                <input type="password" id="login-pass" placeholder="Password" class="input-field w-full">
+                <button onclick="handleLogin()" id="login-btn" class="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-indigo-50 transition-all">Sign In</button>
+            </div>
         </div>
     </div>
 
-    <aside class="glass w-72 rounded-[2rem] flex flex-col p-8 shrink-0">
+    <aside id="sidebar" class="hidden glass w-72 rounded-[2rem] flex flex-col p-8 shrink-0">
         <div class="flex items-center gap-3 mb-12">
-            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/40">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-            </div>
             <span class="text-xl font-bold tracking-tight">Lumina Pro</span>
         </div>
-
         <nav class="flex-1 space-y-2">
             <button onclick="switchView('dash')" class="w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Dashboard</button>
             <button onclick="switchView('books')" class="w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Inventory</button>
-            <button id="admin-nav" onclick="switchView('users')" class="hidden w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Staff Registry</button>
+            <button id="nav-admin" onclick="switchView('users')" class="hidden w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Staff Registry</button>
         </nav>
-
-        <div class="pt-6 border-t border-white/5 mt-auto">
+        <button onclick="handleLogout()" class="mt-auto text-xs text-slate-500 hover:text-red-400 transition text-left px-5">Logout Session</button>
+        <div class="pt-6 border-t border-white/5 mt-4">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-xs" id="user-initial">A</div>
+                <div id="user-initial" class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center font-bold">?</div>
                 <div>
-                    <p class="text-sm font-bold truncate w-32" id="user-name">System Admin</p>
-                    <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest" id="user-role">Admin</p>
+                    <p id="user-display-name" class="text-sm font-bold truncate w-32">User</p>
+                    <p id="user-display-role" class="text-[10px] text-indigo-400 font-bold uppercase">Role</p>
                 </div>
             </div>
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col gap-6 overflow-hidden">
-        
-        <section id="view-dash" class="animate-view space-y-6">
-            <div class="flex justify-between items-center">
-                <h2 class="text-3xl font-extrabold">System Insights</h2>
-                <div class="px-4 py-2 glass rounded-full text-xs font-bold text-emerald-400 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Supabase Realtime Active
-                </div>
-            </div>
+    <main id="main-content" class="hidden flex-1 flex flex-col gap-6 overflow-hidden">
+        <section id="view-dash" class="space-y-6">
+            <h2 class="text-3xl font-extrabold">System Insights</h2>
             <div class="grid grid-cols-3 gap-6">
                 <div class="glass p-8 rounded-3xl">
-                    <p class="text-slate-500 text-xs font-bold uppercase mb-1">Total Assets</p>
-                    <h3 class="text-4xl font-black" id="stat-books">0</h3>
+                    <p class="text-slate-500 text-xs font-bold uppercase">Assets</p>
+                    <h3 id="stat-books" class="text-4xl font-black">0</h3>
                 </div>
                 <div class="glass p-8 rounded-3xl">
-                    <p class="text-slate-500 text-xs font-bold uppercase mb-1">Active Loans</p>
-                    <h3 class="text-4xl font-black text-indigo-400" id="stat-loans">0</h3>
-                </div>
-                <div class="glass p-8 rounded-3xl">
-                    <p class="text-slate-500 text-xs font-bold uppercase mb-1">System Users</p>
-                    <h3 class="text-4xl font-black text-purple-400" id="stat-users">0</h3>
+                    <p class="text-slate-500 text-xs font-bold uppercase">Staff</p>
+                    <h3 id="stat-users" class="text-4xl font-black text-purple-400">0</h3>
                 </div>
             </div>
         </section>
 
-        <section id="view-books" class="hidden animate-view flex-1 glass rounded-3xl p-8 flex flex-col overflow-hidden">
+        <section id="view-books" class="hidden flex-1 glass rounded-3xl p-8 flex flex-col overflow-hidden">
             <div class="flex justify-between items-center mb-8">
-                <h2 class="text-2xl font-bold">Inventory & Circulation</h2>
-                <button id="lib-action" onclick="openModal('issue-modal')" class="hidden bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-bold text-sm transition shadow-lg shadow-indigo-600/20">
-                    + Issue Book
-                </button>
+                <h2 class="text-2xl font-bold">Inventory</h2>
+                <button id="btn-issue" onclick="openModal('issue-modal')" class="hidden bg-indigo-600 px-6 py-3 rounded-xl font-bold text-sm">+ Issue</button>
             </div>
-            <div class="overflow-y-auto flex-1">
+            <div class="overflow-y-auto">
                 <table class="w-full text-left">
-                    <thead class="text-slate-500 text-[10px] uppercase font-bold tracking-widest">
-                        <tr><th class="p-4">Resource Title</th><th class="p-4">ISBN</th><th class="p-4">Status</th><th class="p-4">Issued To</th></tr>
-                    </thead>
                     <tbody id="book-rows" class="divide-y divide-white/5"></tbody>
                 </table>
             </div>
         </section>
-
-        <section id="view-users" class="hidden animate-view flex-1 glass rounded-3xl p-8 flex flex-col overflow-hidden">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-2xl font-bold">Institutional Staff Registry</h2>
-                <button onclick="openModal('user-modal')" class="bg-purple-600 hover:bg-purple-500 px-6 py-3 rounded-xl font-bold text-sm transition">
-                    + Register New Staff
-                </button>
-            </div>
-            <div id="user-grid" class="grid grid-cols-2 gap-4 overflow-y-auto"></div>
-        </section>
     </main>
 
-    <div id="issue-modal" class="modal fixed inset-0 z-[500] items-center justify-center p-6">
-        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md">
-            <h3 class="text-xl font-bold mb-6">Issue Library Resource</h3>
-            <div class="space-y-4">
-                <select id="issue-book-id" class="input-field w-full bg-slate-900"></select>
-                <input type="text" id="student-name" placeholder="Student Full Name" class="input-field w-full">
-                <div class="flex gap-3 pt-4">
-                    <button onclick="closeModal('issue-modal')" class="flex-1 py-3 text-slate-400 font-bold">Cancel</button>
-                    <button onclick="handleIssue()" class="flex-1 bg-indigo-600 rounded-xl font-bold">Confirm Issue</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="user-modal" class="modal fixed inset-0 z-[500] items-center justify-center p-6">
-        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md">
-            <h3 class="text-xl font-bold mb-6 text-purple-400">Add Staff Member</h3>
-            <div class="space-y-4">
-                <input type="text" id="reg-name" placeholder="Full Name" class="input-field w-full">
-                <select id="reg-role" class="input-field w-full bg-slate-900">
-                    <option value="Librarian">Librarian</option>
-                    <option value="Teacher">Teacher</option>
-                    <option value="Principal">Principal</option>
-                </select>
-                <input type="text" id="reg-dept" placeholder="Department" class="input-field w-full">
-                <div class="flex gap-3 pt-4">
-                    <button onclick="closeModal('user-modal')" class="flex-1 py-3 text-slate-400 font-bold">Cancel</button>
-                    <button onclick="handleRegister()" class="flex-1 bg-purple-600 rounded-xl font-bold">Create Account</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        let _supabase = null;
-        let currentUser = { name: "System Admin", role: "Admin" };
+        // --- PERMANENT CONFIG ---
+        const SUPABASE_URL = "https://cuhkmivwjghclqlkehys.supabase.co"; 
+        const SUPABASE_KEY = "sb_publishable_IaqT2F1n6UlUZ-vhIAfOWA_O1gNvDiu";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        async function initSupabase() {
-            const url = document.getElementById('supa-url').value;
-            const key = document.getElementById('supa-key').value;
+        let userProfile = null;
+
+        // Check if user is already logged in on page load
+        window.onload = async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) fetchProfile(session.user);
+        };
+
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-pass').value;
+            const btn = document.getElementById('login-btn');
             
-            if(!url || !key) return alert("Please enter Supabase credentials");
+            btn.innerText = "Authenticating...";
+            const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
 
-            // Initialize the real Supabase Client
-            _supabase = supabase.createClient(url, key);
-
-            document.getElementById('config-overlay').classList.add('hidden');
-            setupUIByRole();
-            
-            // Initial Data Fetch
-            fetchInventory();
-            fetchStaff();
-
-            // Setup Realtime Subscriptions
-            setupRealtime();
-        }
-
-        function setupUIByRole() {
-            if(currentUser.role === 'Admin') {
-                document.getElementById('admin-nav').classList.remove('hidden');
-            }
-            if(currentUser.role === 'Admin' || currentUser.role === 'Librarian') {
-                document.getElementById('lib-action').classList.remove('hidden');
+            if (error) {
+                alert(error.message);
+                btn.innerText = "Sign In";
+            } else {
+                fetchProfile(data.user);
             }
         }
 
-        // --- DATA FETCHING ---
+        async function fetchProfile(authUser) {
+            const { data, error } = await _supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', authUser.id)
+                .single();
 
-        async function fetchInventory() {
-            const { data, error } = await _supabase.from('books').select('*');
-            if (error) console.error(error);
-            renderInventory(data || []);
+            if (data) {
+                userProfile = data;
+                renderApp();
+            }
         }
 
-        async function fetchStaff() {
-            const { data, error } = await _supabase.from('staff').select('*');
-            if (error) console.error(error);
-            renderStaff(data || []);
+        function renderApp() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('sidebar').classList.remove('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+
+            document.getElementById('user-display-name').innerText = userProfile.full_name;
+            document.getElementById('user-display-role').innerText = userProfile.role;
+            document.getElementById('user-initial').innerText = userProfile.full_name.charAt(0);
+
+            // ROLE BASED UI
+            if (userProfile.role === 'Admin') {
+                document.getElementById('nav-admin').classList.remove('hidden');
+                document.getElementById('btn-issue').classList.remove('hidden');
+            } else if (userProfile.role === 'Librarian') {
+                document.getElementById('btn-issue').classList.remove('hidden');
+            }
+
+            // Start Data Fetch
+            fetchData();
         }
 
-        // --- REALTIME ---
-
-        function setupRealtime() {
-            _supabase.channel('custom-all-channel')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'books' }, () => fetchInventory())
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' }, () => fetchStaff())
-            .subscribe();
-        }
-
-        // --- RENDERING ---
-
-        function renderInventory(books) {
-            const tbody = document.getElementById('book-rows');
-            const select = document.getElementById('issue-book-id');
-            const loanCount = books.filter(b => b.status === 'LOANED').length;
+        async function fetchData() {
+            const { data: books } = await _supabase.from('books').select('*');
+            const { data: staff } = await _supabase.from('profiles').select('*');
             
-            document.getElementById('stat-books').innerText = books.length;
-            document.getElementById('stat-loans').innerText = loanCount;
+            document.getElementById('stat-books').innerText = books?.length || 0;
+            document.getElementById('stat-users').innerText = staff?.length || 0;
 
-            tbody.innerHTML = books.map(book => `
-                <tr class="hover:bg-white/[0.02]">
-                    <td class="p-4 font-bold">${book.title}</td>
-                    <td class="p-4 text-xs font-mono opacity-50">${book.isbn || 'N/A'}</td>
-                    <td class="p-4">
-                        <span class="px-2 py-1 rounded-md text-[10px] font-bold ${book.status === 'AVAILABLE' ? 'text-emerald-400 bg-emerald-400/10' : 'text-indigo-400 bg-indigo-400/10'}">
-                            ${book.status}
-                        </span>
-                    </td>
-                    <td class="p-4 text-sm opacity-70">${book.issued_to || '-'}</td>
+            document.getElementById('book-rows').innerHTML = books?.map(b => `
+                <tr>
+                    <td class="p-4 font-bold">${b.title}</td>
+                    <td class="p-4"><span class="text-xs ${b.status === 'AVAILABLE' ? 'text-emerald-400' : 'text-indigo-400'}">${b.status}</span></td>
                 </tr>
-            `).join('');
-
-            // Update Issue Modal Dropdown
-            select.innerHTML = '<option value="">Select Book...</option>' + 
-                books.filter(b => b.status === 'AVAILABLE')
-                .map(b => `<option value="${b.id}">${b.title}</option>`).join('');
+            `).join('') || '';
         }
 
-        function renderStaff(staff) {
-            document.getElementById('stat-users').innerText = staff.length;
-            const grid = document.getElementById('user-grid');
-            grid.innerHTML = staff.map(person => `
-                <div class="glass-card p-6 rounded-2xl flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center font-bold text-purple-400">
-                        ${person.full_name.charAt(0)}
-                    </div>
-                    <div>
-                        <h4 class="font-bold">${person.full_name}</h4>
-                        <p class="text-[10px] uppercase tracking-wider text-slate-500">${person.role} • ${person.department}</p>
-                    </div>
-                </div>
-            `).join('');
+        async function handleLogout() {
+            await _supabase.auth.signOut();
+            window.location.reload();
         }
 
-        // --- DATABASE ACTIONS ---
-
-        async function handleIssue() {
-            const bookId = document.getElementById('issue-book-id').value;
-            const student = document.getElementById('student-name').value;
-
-            if(!bookId || !student) return alert("Fill all fields");
-
-            const { error } = await _supabase
-                .from('books')
-                .update({ status: 'LOANED', issued_to: student })
-                .eq('id', bookId);
-
-            if(error) alert(error.message);
-            else closeModal('issue-modal');
+        function switchView(id) {
+            ['dash', 'books'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+            document.getElementById(`view-${id}`).classList.remove('hidden');
         }
-
-        async function handleRegister() {
-            const name = document.getElementById('reg-name').value;
-            const role = document.getElementById('reg-role').value;
-            const dept = document.getElementById('reg-dept').value;
-
-            const { error } = await _supabase
-                .from('staff')
-                .insert([{ full_name: name, role: role, department: dept }]);
-
-            if(error) alert(error.message);
-            else closeModal('user-modal');
-        }
-
-        // --- UI HELPERS ---
-
-        function switchView(viewId) {
-            ['dash', 'books', 'users'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
-            document.getElementById(`view-${viewId}`).classList.remove('hidden');
-        }
-
-        function openModal(id) { document.getElementById(id).classList.add('active'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
     </script>
 </body>
 </html>
