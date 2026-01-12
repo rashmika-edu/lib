@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina Pro | School Library Management</title>
+    <title>Lumina Pro | Library Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: #f8fafc; height: 100vh; overflow: hidden; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .input-field { background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 0.75rem 1rem; border-radius: 12px; outline: none; transition: 0.3s; width: 100%; }
-        .input-field:focus { border-color: #6366f1; background: rgba(0, 0, 0, 0.4); }
+        .input-field { background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 0.75rem 1rem; border-radius: 12px; outline: none; width: 100%; }
         .modal { backdrop-filter: blur(15px); display: none; position: fixed; inset: 0; z-index: 3000; align-items: center; justify-content: center; padding: 1.5rem; }
         .modal.active { display: flex; }
         .hidden { display: none !important; }
@@ -19,7 +18,7 @@
 </head>
 <body class="flex p-6 gap-6">
 
-    <div id="auth-screen" class="fixed inset-0 z-[4000] bg-slate-950 flex items-center justify-center p-6">
+    <div id="auth-screen" class="fixed inset-0 z-[4000] bg-slate-950 flex items-center justify-center">
         <div class="glass p-10 rounded-[2.5rem] w-full max-w-md text-center">
             <h2 class="text-3xl font-black mb-8">Lumina Pro</h2>
             <div class="space-y-3">
@@ -32,10 +31,11 @@
 
     <aside id="sidebar" class="hidden glass w-72 rounded-[2rem] flex flex-col p-8 shrink-0">
         <nav class="flex-1 space-y-2">
-            <button onclick="switchView('dash')" class="w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition font-bold text-slate-400 hover:text-white">Dashboard</button>
-            <button onclick="switchView('books')" class="w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition font-bold text-slate-400 hover:text-white">Inventory</button>
+            <button onclick="switchView('dash')" class="w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition font-bold">Dashboard</button>
+            <button onclick="switchView('books')" class="w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition font-bold">Inventory</button>
             <button onclick="handleLogout()" class="w-full text-left px-5 py-3 rounded-xl hover:bg-red-500/10 transition text-red-400 font-bold mt-10">Logout</button>
         </nav>
+        <div class="pt-6 border-t border-white/5"><p id="user-name" class="font-bold text-sm">User</p></div>
     </aside>
 
     <main id="main-content" class="hidden flex-1 flex flex-col gap-6 overflow-hidden">
@@ -60,15 +60,16 @@
     <div id="add-book-modal" class="modal"><div class="glass p-10 rounded-[2.5rem] w-full max-w-md">
         <h3 class="font-bold mb-4">Add Asset</h3>
         <input type="text" id="new-book-title" placeholder="Title" class="input-field mb-4">
-        <input type="text" id="new-book-isbn" placeholder="ISBN" class="input-field mb-6">
-        <div class="flex gap-2"><button onclick="closeModal('add-book-modal')" class="flex-1 text-slate-400">Cancel</button><button onclick="submitAddBook()" class="flex-1 bg-emerald-600 rounded-xl py-2 font-bold">Save</button></div>
+        <input type="text" id="new-book-isbn" placeholder="ISBN" class="input-field mb-4">
+        <input type="number" id="new-book-qty" value="1" min="1" placeholder="Quantity" class="input-field mb-6">
+        <div class="flex gap-2"><button onclick="closeModal('add-book-modal')" class="flex-1">Cancel</button><button onclick="submitAddBook()" class="flex-1 bg-emerald-600 rounded-xl font-bold py-2">Save</button></div>
     </div></div>
 
     <div id="issue-modal" class="modal"><div class="glass p-10 rounded-[2.5rem] w-full max-w-md">
-        <h3 class="font-bold mb-4">Issue Book</h3>
+        <h3 class="font-bold mb-4">Issue Resource</h3>
         <select id="issue-book-select" class="input-field mb-4 bg-slate-900"></select>
-        <input type="text" id="issue-student" placeholder="Student Name" class="input-field mb-6">
-        <div class="flex gap-2"><button onclick="closeModal('issue-modal')" class="flex-1 text-slate-400">Cancel</button><button onclick="submitIssue()" class="flex-1 bg-indigo-600 rounded-xl py-2 font-bold">Confirm</button></div>
+        <input type="text" id="issue-student" placeholder="Recipient Name" class="input-field mb-6">
+        <div class="flex gap-2"><button onclick="closeModal('issue-modal')" class="flex-1">Cancel</button><button onclick="submitIssue()" class="flex-1 bg-indigo-600 rounded-xl font-bold py-2">Confirm</button></div>
     </div></div>
 
     <script>
@@ -77,7 +78,10 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let userProfile = null, allBooks = [];
 
-        window.onload = async () => { const { data: { session } } = await _supabase.auth.getSession(); if (session) fetchProfile(session.user); };
+        window.onload = async () => { 
+            const { data: { session } } = await _supabase.auth.getSession(); 
+            if (session) fetchProfile(session.user); 
+        };
 
         async function handleLogin() {
             const { data, error } = await _supabase.auth.signInWithPassword({ email: document.getElementById('login-email').value, password: document.getElementById('login-pass').value });
@@ -86,7 +90,14 @@
 
         async function fetchProfile(u) {
             const { data } = await _supabase.from('profiles').select('*').eq('id', u.id).single();
-            if (data) { userProfile = data; document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('sidebar').classList.remove('hidden'); document.getElementById('main-content').classList.remove('hidden'); fetchData(); }
+            if (data) { 
+                userProfile = data; 
+                document.getElementById('user-name').innerText = data.full_name;
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('sidebar').classList.remove('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                fetchData(); 
+            }
         }
 
         async function fetchData() {
@@ -102,16 +113,23 @@
                     <td class="p-4 font-bold">${b.title}</td>
                     <td class="p-4 text-xs ${b.status === 'AVAILABLE' ? 'text-emerald-400' : 'text-indigo-400'}">${b.status}</td>
                     <td class="p-4 text-xs opacity-50">${b.issued_to || '-'}</td>
-                    <td class="p-4 text-right">${b.status === 'LOANED' ? `<button onclick="handleReturn(${b.id})" class="text-emerald-400 border border-emerald-400/30 px-2 py-1 rounded">Return</button>` : ''}</td>
+                    <td class="p-4 text-right space-x-2">
+                        ${b.status === 'LOANED' ? `<button onclick="handleReturn(${b.id})" class="text-emerald-400 border border-emerald-400/30 px-2 py-1 rounded">Return</button>` : ''}
+                        <button onclick="handleDelete(${b.id})" class="text-red-400 border border-red-400/30 px-2 py-1 rounded">Delete</button>
+                    </td>
                 </tr>`).join('');
             document.getElementById('issue-book-select').innerHTML = '<option value="">Select...</option>' + allBooks.filter(x => x.status === 'AVAILABLE').map(x => `<option value="${x.id}">${x.title}</option>`).join('');
         }
 
-        function renderHistory(list) { document.getElementById('history-list').innerHTML = list.map(x => `<div class="p-2 border-b border-white/5"><b>${x.action}</b>: ${x.book_title} (${x.person_name})</div>`).join(''); }
+        function renderHistory(list) {
+            document.getElementById('history-list').innerHTML = list.map(x => `<div class="p-2 border-b border-white/5"><b>${x.action}</b>: ${x.book_title} (${x.person_name})</div>`).join('');
+        }
 
         async function submitAddBook() {
             const t = document.getElementById('new-book-title').value, i = document.getElementById('new-book-isbn').value;
-            const { error } = await _supabase.from('books').insert([{ title: t, isbn: i, status: 'AVAILABLE', user_id: userProfile.id }]);
+            const q = parseInt(document.getElementById('new-book-qty').value) || 1;
+            const batch = Array.from({ length: q }).map(() => ({ title: t, isbn: i, status: 'AVAILABLE', user_id: userProfile.id }));
+            const { error } = await _supabase.from('books').insert(batch);
             if (error) alert(error.message); else { closeModal('add-book-modal'); fetchData(); }
         }
 
@@ -127,7 +145,17 @@
         async function handleReturn(id) {
             const b = allBooks.find(x => x.id === id);
             const { error } = await _supabase.from('books').update({ status: 'AVAILABLE', issued_to: null }).eq('id', id);
-            if (!error) { await _supabase.from('history').insert([{ book_title: b.title, action: 'RETURNED', person_name: b.issued_to, staff_name: userProfile.full_name }]); fetchData(); }
+            if (!error) { 
+                await _supabase.from('history').insert([{ book_title: b.title, action: 'RETURNED', person_name: b.issued_to, staff_name: userProfile.full_name }]);
+                fetchData(); 
+            }
+        }
+
+        async function handleDelete(id) {
+            if(confirm("Permanently delete this?")) {
+                const { error } = await _supabase.from('books').delete().eq('id', id);
+                if (!error) fetchData();
+            }
         }
 
         function switchView(id) { ['dash', 'books'].forEach(v => document.getElementById(`view-${v}`).classList.toggle('hidden', v !== id)); }
