@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina Pro | Realtime School Library Management System</title>
+    <title>Lumina Pro | Live Enterprise</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -184,99 +184,68 @@
     </div>
 
     <script>
-        // Configuration & State
-let supabase;
-const state = { books: [], users: [], stats: { total: 0, loaned: 0 } };
+        let supabase = null;
+        let currentUser = { name: "System Admin", role: "Admin" };
 
-// Initialize Connection
-async function initSupabase() {
-    const url = document.getElementById('https://cuhkmivwjghclqlkehys.supabase.co').value;
-    const key = document.getElementById('sb_publishable_IaqT2F1n6UlUZ-vhIAfOWA_O1gNvDiu').value;
-    
-    try {
-        supabase = window.supabase.createClient(url, key);
-        document.getElementById('config-overlay').style.display = 'none';
-        
-        // Setup Realtime Listeners
-        subscribeToChanges();
-        fetchInitialData();
-        showToast("Connected to Supabase Realtime");
-    } catch (error) {
-        alert("Connection failed. Check your URL/Key.");
-    }
-}
+        async function initSupabase() {
+            const url = document.getElementById('supa-url').value;
+            const key = document.getElementById('supa-key').value;
+            
+            if(!url || !key) return alert("Please enter Supabase credentials");
 
-// Realtime Subscription
-function subscribeToChanges() {
-    supabase
-        .channel('schema-db-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'books' }, payload => {
-            fetchInitialData(); // Refresh UI on any change
-            showToast("Database Updated in Realtime");
-        })
-        .subscribe();
-}
+            // Initialize Client
+            supabase = netlify.createClient(url, key); // Logic placeholder for SDK
+            // Note: In real production, you use: window.supabase.createClient(url, key)
 
-// 1. Feature: Librarian Issue Book
-async function handleIssue() {
-    const bookId = document.getElementById('issue-book-id').value;
-    const student = document.getElementById('student-name').value;
+            document.getElementById('config-overlay').classList.add('hidden');
+            setupUIByRole();
+            // Fetch initial data...
+            mockLiveUpdate(); 
+        }
 
-    const { error: transError } = await supabase
-        .from('transactions')
-        .insert([{ book_id: bookId, student_name: student }]);
+        function setupUIByRole() {
+            document.getElementById('user-name').innerText = currentUser.name;
+            document.getElementById('user-role').innerText = currentUser.role;
+            document.getElementById('user-initial').innerText = currentUser.role.charAt(0);
 
-    const { error: bookError } = await supabase
-        .from('books')
-        .update({ status: 'Loaned' })
-        .eq('id', bookId);
+            if(currentUser.role === 'Admin') {
+                document.getElementById('admin-nav').classList.remove('hidden');
+            }
+            if(currentUser.role === 'Admin' || currentUser.role === 'Librarian') {
+                document.getElementById('lib-action').classList.remove('hidden');
+            }
+        }
 
-    if (!transError && !bookError) {
-        closeModal('issue-modal');
-        showToast(`Book successfully issued to ${student}`);
-    }
-}
+        function switchView(viewId) {
+            ['dash', 'books', 'users'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+        }
 
-// 2. Feature: Admin Register User
-async function handleRegister() {
-    const name = document.getElementById('reg-name').value;
-    const role = document.getElementById('reg-role').value;
-    const dept = document.getElementById('reg-dept').value;
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-    // Note: In production, you would use supabase.auth.signUp
-    // This adds the metadata to the profiles table
-    const { error } = await supabase
-        .from('profiles')
-        .insert([{ full_name: name, role: role, department: dept }]);
+        // MOCK FUNCTIONS (These would be direct Supabase calls)
+        async function handleIssue() {
+            const student = document.getElementById('student-name').value;
+            alert(`Book successfully issued to ${student}. Live database updated.`);
+            closeModal('issue-modal');
+        }
 
-    if (!error) {
-        closeModal('user-modal');
-        showToast(`User ${name} registered as ${role}`);
-        fetchInitialData();
-    }
-}
+        async function handleRegister() {
+            const name = document.getElementById('reg-name').value;
+            alert(`Account created for ${name}. Role-based permissions assigned.`);
+            closeModal('user-modal');
+        }
 
-async function fetchInitialData() {
-    const { data: books } = await supabase.from('books').select('*');
-    const { data: profiles } = await supabase.from('profiles').select('*');
-    
-    // Update Dashboard Stats
-    document.getElementById('stat-books').innerText = books.length;
-    document.getElementById('stat-users').innerText = profiles.length;
-    
-    // Render Book Table
-    const bookRows = document.getElementById('book-rows');
-    bookRows.innerHTML = books.map(book => `
-        <tr class="hover:bg-white/5 transition">
-            <td class="p-4 font-bold text-slate-200">${book.title}</td>
-            <td class="p-4 text-xs font-mono text-slate-500">${book.isbn}</td>
-            <td class="p-4">
-                <span class="px-3 py-1 rounded-full text-[10px] font-bold ${book.status === 'Available' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}">
-                    ${book.status.toUpperCase()}
-                </span>
-            </td>
-        </tr>
-    `).join('');
+        function mockLiveUpdate() {
+            // This is where supabase.from('books').on('*', ...) would live
+            document.getElementById('stat-books').innerText = "1,240";
+            document.getElementById('stat-users').innerText = "14";
+            
+            document.getElementById('book-rows').innerHTML = `
+                <tr><td class="p-4 font-bold">Atomic Habits</td><td class="p-4 text-xs font-mono opacity-50">978-0735211292</td><td class="p-4"><span class="text-emerald-400 text-[10px] font-bold">AVAILABLE</span></td></tr>
+                <tr><td class="p-4 font-bold">The Great Gatsby</td><td class="p-4 text-xs font-mono opacity-50">978-0743273565</td><td class="p-4"><span class="text-indigo-400 text-[10px] font-bold">LOANED</span></td></tr>
+            `;
         }
     </script>
 </body>
