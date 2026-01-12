@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina Pro | School Library Management System</title>
+    <title>Lumina Pro | Live Enterprise</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -30,11 +30,6 @@
             transition: all 0.3s ease;
         }
 
-        .glass-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-2px);
-        }
-
         .input-field {
             background: rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -45,9 +40,8 @@
             transition: all 0.3s;
         }
 
-        .input-field:focus { border-color: #6366f1; ring: 2px ring-indigo-500/20; }
-
-        /* Animations */
+        .input-field:focus { border-color: #6366f1; }
+        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-view { animation: fadeIn 0.4s ease-out forwards; }
         
@@ -61,7 +55,7 @@
         <div class="glass p-10 rounded-[2.5rem] w-full max-w-md border-t border-white/20 text-center">
             <h2 class="text-2xl font-bold mb-2">Connect Supabase</h2>
             <p class="text-slate-400 text-sm mb-6">Enter your project credentials to enable Realtime</p>
-            <input type="text" id="supa-url" placeholder="Supabase Project URL" class="input-field w-full mb-3 text-xs">
+            <input type="text" id="supa-url" placeholder="https://xyz.supabase.co" class="input-field w-full mb-3 text-xs">
             <input type="password" id="supa-key" placeholder="Anon Public API Key" class="input-field w-full mb-6 text-xs">
             <button onclick="initSupabase()" class="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-slate-200 transition">Connect & Launch</button>
         </div>
@@ -76,17 +70,17 @@
         </div>
 
         <nav class="flex-1 space-y-2">
-            <button onclick="switchView('dash')" class="w-full flex items-center gap-4 px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Dashboard</button>
-            <button onclick="switchView('books')" class="w-full flex items-center gap-4 px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Inventory</button>
-            <button id="admin-nav" onclick="switchView('users')" class="hidden w-full flex items-center gap-4 px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Register Users</button>
+            <button onclick="switchView('dash')" class="w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Dashboard</button>
+            <button onclick="switchView('books')" class="w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Inventory</button>
+            <button id="admin-nav" onclick="switchView('users')" class="hidden w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Staff Registry</button>
         </nav>
 
         <div class="pt-6 border-t border-white/5 mt-auto">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-xs" id="user-initial">?</div>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-xs" id="user-initial">A</div>
                 <div>
-                    <p class="text-sm font-bold truncate w-32" id="user-name">Guest User</p>
-                    <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest" id="user-role">Role</p>
+                    <p class="text-sm font-bold truncate w-32" id="user-name">System Admin</p>
+                    <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest" id="user-role">Admin</p>
                 </div>
             </div>
         </div>
@@ -108,7 +102,7 @@
                 </div>
                 <div class="glass p-8 rounded-3xl">
                     <p class="text-slate-500 text-xs font-bold uppercase mb-1">Active Loans</p>
-                    <h3 class="text-4xl font-black text-indigo-400">0</h3>
+                    <h3 class="text-4xl font-black text-indigo-400" id="stat-loans">0</h3>
                 </div>
                 <div class="glass p-8 rounded-3xl">
                     <p class="text-slate-500 text-xs font-bold uppercase mb-1">System Users</p>
@@ -127,34 +121,29 @@
             <div class="overflow-y-auto flex-1">
                 <table class="w-full text-left">
                     <thead class="text-slate-500 text-[10px] uppercase font-bold tracking-widest">
-                        <tr><th class="p-4">Resource Title</th><th class="p-4">ISBN</th><th class="p-4">Status</th></tr>
+                        <tr><th class="p-4">Resource Title</th><th class="p-4">ISBN</th><th class="p-4">Status</th><th class="p-4">Issued To</th></tr>
                     </thead>
-                    <tbody id="book-rows" class="divide-y divide-white/5">
-                        </tbody>
+                    <tbody id="book-rows" class="divide-y divide-white/5"></tbody>
                 </table>
             </div>
         </section>
 
-        <section id="view-users" class="hidden animate-view flex-1 glass rounded-3xl p-8 flex flex-col">
+        <section id="view-users" class="hidden animate-view flex-1 glass rounded-3xl p-8 flex flex-col overflow-hidden">
             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-2xl font-bold">Institutional Staff Registry</h2>
                 <button onclick="openModal('user-modal')" class="bg-purple-600 hover:bg-purple-500 px-6 py-3 rounded-xl font-bold text-sm transition">
                     + Register New Staff
                 </button>
             </div>
-            <div id="user-grid" class="grid grid-cols-2 gap-4">
-                </div>
+            <div id="user-grid" class="grid grid-cols-2 gap-4 overflow-y-auto"></div>
         </section>
-
     </main>
 
     <div id="issue-modal" class="modal fixed inset-0 z-[500] items-center justify-center p-6">
         <div class="glass p-10 rounded-[2.5rem] w-full max-w-md">
             <h3 class="text-xl font-bold mb-6">Issue Library Resource</h3>
             <div class="space-y-4">
-                <select id="issue-book-id" class="input-field w-full bg-slate-900">
-                    <option>Select Book from Inventory...</option>
-                </select>
+                <select id="issue-book-id" class="input-field w-full bg-slate-900"></select>
                 <input type="text" id="student-name" placeholder="Student Full Name" class="input-field w-full">
                 <div class="flex gap-3 pt-4">
                     <button onclick="closeModal('issue-modal')" class="flex-1 py-3 text-slate-400 font-bold">Cancel</button>
@@ -184,161 +173,145 @@
     </div>
 
     <script>
-       // Global State
-let supabase;
-let currentUser = { name: "System Admin", role: "Admin" };
+        let _supabase = null;
+        let currentUser = { name: "System Admin", role: "Admin" };
 
-// FIX: Correct Initialization Logic
-async function initSupabase() {
-    const url = document.getElementById('supa-url').value.trim();
-    const key = document.getElementById('supa-key').value.trim();
-    const btn = document.querySelector('#config-overlay button');
+        async function initSupabase() {
+            const url = document.getElementById('supa-url').value;
+            const key = document.getElementById('supa-key').value;
+            
+            if(!url || !key) return alert("Please enter Supabase credentials");
 
-    if (!url || !key) {
-        alert("Missing Credentials: Please enter both URL and Anon Key.");
-        return;
-    }
+            // Initialize the real Supabase Client
+            _supabase = supabase.createClient(url, key);
 
-    try {
-        btn.innerText = "Authenticating...";
-        btn.disabled = true;
+            document.getElementById('config-overlay').classList.add('hidden');
+            setupUIByRole();
+            
+            // Initial Data Fetch
+            fetchInventory();
+            fetchStaff();
 
-        // Standard Supabase initialization for browser
-        window.supabaseClient = window.supabase.createClient(url, key);
-        supabase = window.supabaseClient;
-
-        // TEST CONNECTION: Attempt to fetch 1 row from the 'books' table
-        const { data, error, status } = await supabase
-            .from('books')
-            .select('id')
-            .limit(1);
-
-        if (error) {
-            // Check if the error is specifically about the table not existing
-            if (error.code === '42P01') {
-                throw new Error("Table 'books' not found. Did you run the SQL commands?");
-            }
-            throw error;
+            // Setup Realtime Subscriptions
+            setupRealtime();
         }
 
-        // Success: Transition UI
-        document.getElementById('config-overlay').classList.add('hidden');
-        document.getElementById('config-overlay').style.display = 'none';
-        
-        setupUIByRole();
-        fetchData(); // Load the books and users
-        startRealtimeSubscription();
-        
-        console.log("Connected successfully. Status:", status);
+        function setupUIByRole() {
+            if(currentUser.role === 'Admin') {
+                document.getElementById('admin-nav').classList.remove('hidden');
+            }
+            if(currentUser.role === 'Admin' || currentUser.role === 'Librarian') {
+                document.getElementById('lib-action').classList.remove('hidden');
+            }
+        }
 
-    } catch (err) {
-        console.error("Supabase Connection Error:", err);
-        alert(`Connection Failed!\n\nReason: ${err.message || 'Unknown Error'}\n\nCheck your Supabase URL and ensure your Anon Key is correct.`);
-        btn.innerText = "Connect & Launch";
-        btn.disabled = false;
-    }
-}
+        // --- DATA FETCHING ---
 
-// Realtime: Listen for database changes automatically
-function startRealtimeSubscription() {
-    supabase
-        .channel('any')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'books' }, payload => {
-            fetchData(); // Refresh list when a book is issued/added
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, payload => {
-            fetchData(); // Refresh list when a user is registered
-        })
-        .subscribe();
-}
+        async function fetchInventory() {
+            const { data, error } = await _supabase.from('books').select('*');
+            if (error) console.error(error);
+            renderInventory(data || []);
+        }
 
-// FEATURE: Librarian Issues a Book
-async function handleIssue() {
-    const bookId = document.getElementById('issue-book-id').value;
-    const student = document.getElementById('student-name').value;
+        async function fetchStaff() {
+            const { data, error } = await _supabase.from('staff').select('*');
+            if (error) console.error(error);
+            renderStaff(data || []);
+        }
 
-    if(!bookId || !student) return alert("Fill all fields");
+        // --- REALTIME ---
 
-    // 1. Update book status
-    const { error: updateError } = await supabase
-        .from('books')
-        .update({ status: 'Loaned' })
-        .eq('id', bookId);
+        function setupRealtime() {
+            _supabase.channel('custom-all-channel')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'books' }, () => fetchInventory())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' }, () => fetchStaff())
+            .subscribe();
+        }
 
-    // 2. Log transaction
-    const { error: transError } = await supabase
-        .from('transactions')
-        .insert([{ book_id: bookId, student_name: student }]);
+        // --- RENDERING ---
 
-    if (!updateError && !transError) {
-        closeModal('issue-modal');
-        alert("Book Issued Successfully!");
-    }
-}
+        function renderInventory(books) {
+            const tbody = document.getElementById('book-rows');
+            const select = document.getElementById('issue-book-id');
+            const loanCount = books.filter(b => b.status === 'LOANED').length;
+            
+            document.getElementById('stat-books').innerText = books.length;
+            document.getElementById('stat-loans').innerText = loanCount;
 
-// FEATURE: Admin Registers a New User
-async function handleRegister() {
-    const name = document.getElementById('reg-name').value;
-    const role = document.getElementById('reg-role').value;
-    const dept = document.getElementById('reg-dept').value;
+            tbody.innerHTML = books.map(book => `
+                <tr class="hover:bg-white/[0.02]">
+                    <td class="p-4 font-bold">${book.title}</td>
+                    <td class="p-4 text-xs font-mono opacity-50">${book.isbn || 'N/A'}</td>
+                    <td class="p-4">
+                        <span class="px-2 py-1 rounded-md text-[10px] font-bold ${book.status === 'AVAILABLE' ? 'text-emerald-400 bg-emerald-400/10' : 'text-indigo-400 bg-indigo-400/10'}">
+                            ${book.status}
+                        </span>
+                    </td>
+                    <td class="p-4 text-sm opacity-70">${book.issued_to || '-'}</td>
+                </tr>
+            `).join('');
 
-    const { error } = await supabase
-        .from('profiles')
-        .insert([{ full_name: name, role: role, department: dept }]);
+            // Update Issue Modal Dropdown
+            select.innerHTML = '<option value="">Select Book...</option>' + 
+                books.filter(b => b.status === 'AVAILABLE')
+                .map(b => `<option value="${b.id}">${b.title}</option>`).join('');
+        }
 
-    if (!error) {
-        closeModal('user-modal');
-        alert("Staff Member Registered!");
-    } else {
-        alert(error.message);
-    }
-}
+        function renderStaff(staff) {
+            document.getElementById('stat-users').innerText = staff.length;
+            const grid = document.getElementById('user-grid');
+            grid.innerHTML = staff.map(person => `
+                <div class="glass-card p-6 rounded-2xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center font-bold text-purple-400">
+                        ${person.full_name.charAt(0)}
+                    </div>
+                    <div>
+                        <h4 class="font-bold">${person.full_name}</h4>
+                        <p class="text-[10px] uppercase tracking-wider text-slate-500">${person.role} • ${person.department}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
 
-// UI & Data Sync
-async function fetchData() {
-    const { data: books } = await supabase.from('books').select('*');
-    const { data: profiles } = await supabase.from('profiles').select('*');
+        // --- DATABASE ACTIONS ---
 
-    // Update Stats
-    document.getElementById('stat-books').innerText = books ? books.length : 0;
-    document.getElementById('stat-users').innerText = profiles ? profiles.length : 0;
+        async function handleIssue() {
+            const bookId = document.getElementById('issue-book-id').value;
+            const student = document.getElementById('student-name').value;
 
-    // Render Inventory
-    const bookContainer = document.getElementById('book-rows');
-    bookContainer.innerHTML = books.map(b => `
-        <tr class="hover:bg-white/5 transition">
-            <td class="p-4 font-bold text-slate-200">${b.title}</td>
-            <td class="p-4 text-xs font-mono text-slate-500">${b.isbn || 'N/A'}</td>
-            <td class="p-4">
-                <span class="px-3 py-1 rounded-full text-[10px] font-bold ${b.status === 'Available' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}">
-                    ${b.status.toUpperCase()}
-                </span>
-            </td>
-        </tr>
-    `).join('');
+            if(!bookId || !student) return alert("Fill all fields");
 
-    // Update Issue Book Dropdown
-    const dropdown = document.getElementById('issue-book-id');
-    const availableBooks = books.filter(b => b.status === 'Available');
-    dropdown.innerHTML = `<option value="">Select Book...</option>` + 
-        availableBooks.map(b => `<option value="${b.id}">${b.title}</option>`).join('');
-}
+            const { error } = await _supabase
+                .from('books')
+                .update({ status: 'LOANED', issued_to: student })
+                .eq('id', bookId);
 
-function setupUIByRole() {
-    document.getElementById('user-name').innerText = currentUser.name;
-    document.getElementById('user-role').innerText = currentUser.role;
-    if(currentUser.role === 'Admin') document.getElementById('admin-nav').classList.remove('hidden');
-    if(currentUser.role === 'Librarian' || currentUser.role === 'Admin') document.getElementById('lib-action').classList.remove('hidden');
-}
+            if(error) alert(error.message);
+            else closeModal('issue-modal');
+        }
 
-function switchView(viewId) {
-    document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-    document.getElementById(`view-${viewId}`).classList.remove('hidden');
-}
+        async function handleRegister() {
+            const name = document.getElementById('reg-name').value;
+            const role = document.getElementById('reg-role').value;
+            const dept = document.getElementById('reg-dept').value;
 
-function openModal(id) { document.getElementById(id).classList.add('active'); }
-function closeModal(id) { document.getElementById(id).classList.remove('active'); 
-}
+            const { error } = await _supabase
+                .from('staff')
+                .insert([{ full_name: name, role: role, department: dept }]);
+
+            if(error) alert(error.message);
+            else closeModal('user-modal');
+        }
+
+        // --- UI HELPERS ---
+
+        function switchView(viewId) {
+            ['dash', 'books', 'users'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+        }
+
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
     </script>
 </body>
 </html>
