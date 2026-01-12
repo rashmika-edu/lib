@@ -195,27 +195,17 @@
             if (error) alert(error.message); else { alert("Successful! Please sign in."); toggleAuth(false); }
         }
 
-        // NEW: Admin function to add staff
         async function submitAddStaff() {
             const name = document.getElementById('admin-reg-name').value;
             const email = document.getElementById('admin-reg-email').value;
             const pass = document.getElementById('admin-reg-pass').value;
             const role = document.getElementById('admin-reg-role').value;
-
             if (!name || !email || !pass) return alert("All fields are required");
-
             const { error } = await _supabase.auth.signUp({
                 email, password: pass,
                 options: { data: { full_name: name, role: role } }
             });
-
-            if (error) {
-                alert(error.message);
-            } else {
-                alert(`Staff member ${name} has been registered.`);
-                closeModal('add-staff-modal');
-                fetchData();
-            }
+            if (error) alert(error.message); else { alert(`Staff member ${name} registered.`); closeModal('add-staff-modal'); fetchData(); }
         }
 
         async function fetchProfile(u) {
@@ -233,10 +223,11 @@
 
             if (userProfile.role === 'Admin') {
                 document.getElementById('nav-admin').classList.remove('hidden');
-                document.getElementById('btn-add-book').classList.remove('hidden');
                 document.getElementById('btn-add-staff').classList.remove('hidden');
             }
+            // Logic Fix: Admins and Librarians can both add books/issue
             if (userProfile.role === 'Admin' || userProfile.role === 'Librarian') {
+                document.getElementById('btn-add-book').classList.remove('hidden');
                 document.getElementById('btn-issue').classList.remove('hidden');
                 document.getElementById('th-actions').classList.remove('hidden');
             }
@@ -295,11 +286,30 @@
             if (error) alert(error.message); else fetchData();
         }
 
+        // FIXED: submitAddBook now resets fields, provides feedback, and maps user_id
         async function submitAddBook() {
-            const t = document.getElementById('new-book-title').value;
-            const i = document.getElementById('new-book-isbn').value;
-            const { error } = await _supabase.from('books').insert([{ title: t, isbn: i, status: 'AVAILABLE' }]);
-            if (!error) { closeModal('add-book-modal'); fetchData(); }
+            const titleInput = document.getElementById('new-book-title');
+            const isbnInput = document.getElementById('new-book-isbn');
+            const t = titleInput.value;
+            const i = isbnInput.value;
+
+            if(!t) return alert("Resource Title is required.");
+
+            const { error } = await _supabase.from('books').insert([{ 
+                title: t, 
+                isbn: i, 
+                status: 'AVAILABLE',
+                user_id: userProfile.id // Added user_id for RLS compatibility
+            }]);
+
+            if (error) {
+                alert("Failed to add book: " + error.message);
+            } else { 
+                titleInput.value = '';
+                isbnInput.value = '';
+                closeModal('add-book-modal'); 
+                fetchData(); 
+            }
         }
 
         async function submitIssue() {
