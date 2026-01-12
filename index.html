@@ -294,49 +294,57 @@
             if (error) alert(error.message); else fetchData();
         }
 
+// FIXED: Confirm Issue Button
+async function submitIssue() {
+    const bookId = document.getElementById('issue-book-select').value;
+    const studentName = document.getElementById('issue-student').value;
+
+    if (!bookId || !studentName) {
+        return alert("Please select a book and enter a recipient name.");
+    }
+
+    const { error } = await _supabase
+        .from('books')
+        .update({ 
+            status: 'LOANED', 
+            issued_to: studentName 
+        })
+        .eq('id', bookId);
+
+    if (error) {
+        console.error("Issue Error:", error);
+        alert("Failed to issue: " + error.message);
+    } else {
+        alert("Resource issued successfully!");
+        closeModal('issue-modal');
+        fetchData(); // Refresh the list
+    }
+}
+
+// FIXED: Save Asset Button
 async function submitAddBook() {
-    const titleInput = document.getElementById('new-book-title');
-    const isbnInput = document.getElementById('new-book-isbn');
-    const t = titleInput.value;
-    const i = isbnInput.value;
+    const title = document.getElementById('new-book-title').value;
+    const isbn = document.getElementById('new-book-isbn').value;
 
-    if(!t) return alert("Resource Title is required.");
+    if (!title) return alert("Resource Title is required.");
 
-    // We explicitly send 'AVAILABLE' in uppercase to match the DB constraint
     const { error } = await _supabase.from('books').insert([{ 
-        title: t, 
-        isbn: i, 
-        status: 'AVAILABLE', 
+        title: title, 
+        isbn: isbn, 
+        status: 'AVAILABLE',
         user_id: userProfile.id 
     }]);
 
     if (error) {
-        console.error(error);
-        alert("Error: " + error.message);
+        console.error("Add Error:", error);
+        alert("Failed to save: " + error.message);
     } else { 
-        alert("Asset saved successfully!");
-        titleInput.value = '';
-        isbnInput.value = '';
+        document.getElementById('new-book-title').value = '';
+        document.getElementById('new-book-isbn').value = '';
         closeModal('add-book-modal'); 
         fetchData(); 
     }
 }
-
-        async function submitIssue() {
-            const bid = document.getElementById('issue-book-select').value;
-            const s = document.getElementById('issue-student').value;
-            const { error } = await _supabase.from('books').update({ status: 'LOANED', issued_to: s }).eq('id', bid);
-            if (!error) { closeModal('issue-modal'); fetchData(); }
-        }
-
-        async function handleReturn(id) { await _supabase.from('books').update({ status: 'AVAILABLE', issued_to: null }).eq('id', id); fetchData(); }
-        async function handleDeleteBook(id) { if(confirm("Delete asset?")) { await _supabase.from('books').delete().eq('id', id); fetchData(); } }
-        function filterByISBN() { const q = document.getElementById('isbn-search').value.toLowerCase(); renderBooks(allBooks.filter(b => (b.isbn || '').toLowerCase().includes(q))); }
-        function toggleAuth(s) { document.getElementById('login-form').classList.toggle('hidden', s); document.getElementById('register-form').classList.toggle('hidden', !s); }
-        async function handleLogout() { await _supabase.auth.signOut(); window.location.reload(); }
-        function switchView(id) { ['dash', 'books', 'users'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); document.getElementById(`view-${id}`).classList.remove('hidden'); }
-        function openModal(id) { document.getElementById(id).classList.add('active'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
     </script>
 </body>
 </html>
