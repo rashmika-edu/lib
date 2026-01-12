@@ -190,37 +190,50 @@ let currentUser = { name: "System Admin", role: "Admin" };
 
 // FIX: Correct Initialization Logic
 async function initSupabase() {
-    const url = document.getElementById('supa-url').value;
-    const key = document.getElementById('supa-key').value;
+    const url = document.getElementById('supa-url').value.trim();
+    const key = document.getElementById('supa-key').value.trim();
     const btn = document.querySelector('#config-overlay button');
 
     if (!url || !key) {
-        alert("Please enter both Supabase URL and Anon Key.");
+        alert("Missing Credentials: Please enter both URL and Anon Key.");
         return;
     }
 
     try {
-        btn.innerText = "Connecting...";
+        btn.innerText = "Authenticating...";
         btn.disabled = true;
 
-        // Correct Supabase SDK initialization
-        supabase = window.supabase.createClient(url, key);
+        // Standard Supabase initialization for browser
+        window.supabaseClient = window.supabase.createClient(url, key);
+        supabase = window.supabaseClient;
 
-        // Test the connection by fetching one book
-        const { data, error } = await supabase.from('books').select('id').limit(1);
+        // TEST CONNECTION: Attempt to fetch 1 row from the 'books' table
+        const { data, error, status } = await supabase
+            .from('books')
+            .select('id')
+            .limit(1);
 
-        if (error) throw error;
+        if (error) {
+            // Check if the error is specifically about the table not existing
+            if (error.code === '42P01') {
+                throw new Error("Table 'books' not found. Did you run the SQL commands?");
+            }
+            throw error;
+        }
 
-        // Success: Hide overlay and setup UI
+        // Success: Transition UI
+        document.getElementById('config-overlay').classList.add('hidden');
         document.getElementById('config-overlay').style.display = 'none';
-        setupUIByRole();
-        startRealtimeSubscription();
-        fetchData();
         
-        console.log("Supabase Connected Successfully");
+        setupUIByRole();
+        fetchData(); // Load the books and users
+        startRealtimeSubscription();
+        
+        console.log("Connected successfully. Status:", status);
+
     } catch (err) {
-        console.error(err);
-        alert("Connection Failed: " + err.message);
+        console.error("Supabase Connection Error:", err);
+        alert(`Connection Failed!\n\nReason: ${err.message || 'Unknown Error'}\n\nCheck your Supabase URL and ensure your Anon Key is correct.`);
         btn.innerText = "Connect & Launch";
         btn.disabled = false;
     }
