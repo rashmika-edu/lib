@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina Pro | Enterprise Resource Management</title>
+    <title>Lumina Pro | School Library Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -12,45 +12,38 @@
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .input-field { background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 0.75rem 1rem; border-radius: 12px; outline: none; transition: 0.3s; }
         .input-field:focus { border-color: #6366f1; background: rgba(0, 0, 0, 0.4); }
+        .modal { backdrop-filter: blur(15px); display: none; }
+        .modal.active { display: flex; }
         .hidden { display: none !important; }
-        
-        /* Smooth transitions for auth toggle */
-        #auth-container { transition: all 0.5s ease; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
     </style>
 </head>
 <body class="flex p-6 gap-6">
 
     <div id="auth-screen" class="fixed inset-0 z-[2000] bg-slate-950 flex items-center justify-center p-6">
         <div id="auth-container" class="glass p-10 rounded-[2.5rem] w-full max-w-md text-center">
-            <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-indigo-500/20">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-            </div>
-            
             <div id="login-form">
-                <h2 class="text-3xl font-black mb-2">Welcome Back</h2>
-                <p class="text-slate-400 mb-8 text-sm">Sign in to manage your resources</p>
-                <div class="space-y-3">
+                <h2 class="text-3xl font-black mb-2">Lumina Pro</h2>
+                <div class="space-y-3 mt-8">
                     <input type="email" id="login-email" placeholder="Email Address" class="input-field w-full">
                     <input type="password" id="login-pass" placeholder="Password" class="input-field w-full">
-                    <button onclick="handleLogin()" id="login-btn" class="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-indigo-50 transition-all">Sign In</button>
-                    <p class="text-xs text-slate-500 pt-4">Don't have an account? <a href="#" onclick="toggleAuth(true)" class="text-indigo-400 font-bold">Register Now</a></p>
+                    <button onclick="handleLogin()" id="login-btn" class="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-indigo-50 transition">Sign In</button>
+                    <p class="text-xs text-slate-500 pt-4">Need an account? <a href="#" onclick="toggleAuth(true)" class="text-indigo-400 font-bold">Register</a></p>
                 </div>
             </div>
-
-            <div id="register-form" class="hidden">
-                <h2 class="text-3xl font-black mb-2">Create Account</h2>
-                <p class="text-slate-400 mb-8 text-sm">Join the enterprise network</p>
-                <div class="space-y-3 text-left">
+            <div id="register-form" class="hidden text-left">
+                <h2 class="text-3xl font-black mb-2 text-center">Create Account</h2>
+                <div class="space-y-3 mt-6">
                     <input type="text" id="reg-name" placeholder="Full Name" class="input-field w-full">
                     <input type="email" id="reg-email" placeholder="Email Address" class="input-field w-full">
                     <input type="password" id="reg-pass" placeholder="Password" class="input-field w-full">
                     <select id="reg-role" class="input-field w-full bg-slate-900">
                         <option value="Teacher">Teacher</option>
                         <option value="Librarian">Librarian</option>
-                        <option value="Admin">Admin</option>
                     </select>
-                    <button onclick="handleRegister()" id="reg-btn" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-500 transition-all mt-4">Create Account</button>
-                    <p class="text-xs text-slate-500 pt-4 text-center">Already registered? <a href="#" onclick="toggleAuth(false)" class="text-indigo-400 font-bold">Sign In</a></p>
+                    <button onclick="handleRegister()" id="reg-btn" class="w-full bg-indigo-600 font-bold py-4 rounded-xl mt-4 hover:bg-indigo-500 transition">Register</button>
+                    <p class="text-xs text-slate-500 pt-4 text-center">Back to <a href="#" onclick="toggleAuth(false)" class="text-indigo-400 font-bold">Sign In</a></p>
                 </div>
             </div>
         </div>
@@ -58,166 +51,213 @@
 
     <aside id="sidebar" class="hidden glass w-72 rounded-[2rem] flex flex-col p-8 shrink-0">
         <div class="flex items-center gap-3 mb-12">
-            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
             <span class="text-xl font-bold tracking-tight">Lumina Pro</span>
         </div>
-
         <nav class="flex-1 space-y-2">
-            <button onclick="switchView('dash')" class="w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Dashboard</button>
-            <button onclick="switchView('books')" class="w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Inventory</button>
-            <button id="nav-admin" onclick="switchView('users')" class="hidden w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Staff Registry</button>
-            
-            <button onclick="handleLogout()" class="w-full text-left px-5 py-3 rounded-xl hover:bg-red-500/10 transition text-red-400 font-bold mt-10">
-                Logout Session
-            </button>
+            <button onclick="switchView('dash')" class="w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white font-bold">Dashboard</button>
+            <button onclick="switchView('books')" class="w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white font-bold">Inventory</button>
+            <button id="nav-admin" onclick="switchView('users')" class="hidden w-full text-left px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white font-bold">Staff Registry</button>
+            <button onclick="handleLogout()" class="w-full text-left px-5 py-3 rounded-xl hover:bg-red-500/10 transition text-red-400 font-bold mt-10">Logout</button>
         </nav>
-
         <div class="pt-6 border-t border-white/5 mt-auto">
             <div class="flex items-center gap-3 mb-6">
-                <div id="user-initial" class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center font-bold">?</div>
+                <div id="user-initial" class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center font-bold uppercase text-sm">?</div>
                 <div>
                     <p id="user-display-name" class="text-sm font-bold truncate w-32">User</p>
                     <p id="user-display-role" class="text-[10px] text-indigo-400 font-bold uppercase">Role</p>
                 </div>
             </div>
-            <p class="text-[10px] text-slate-600 leading-relaxed font-medium">
-                © 2026 <br> Developer By K.A.V.Rashmika
-            </p>
+            <p class="text-[10px] text-slate-600 leading-relaxed font-semibold">© 2026 <br> Developer By K.A.V.Rashmika</p>
         </div>
     </aside>
 
     <main id="main-content" class="hidden flex-1 flex flex-col gap-6 overflow-hidden">
         <section id="view-dash" class="space-y-6">
             <h2 class="text-3xl font-extrabold">System Insights</h2>
-            <div class="grid grid-cols-3 gap-6">
+            <div class="grid grid-cols-2 gap-6">
                 <div class="glass p-8 rounded-3xl">
-                    <p class="text-slate-500 text-xs font-bold uppercase">Total Assets</p>
+                    <p class="text-slate-500 text-xs font-bold uppercase">Resources</p>
                     <h3 id="stat-books" class="text-4xl font-black">0</h3>
                 </div>
                 <div class="glass p-8 rounded-3xl">
-                    <p class="text-slate-500 text-xs font-bold uppercase">Staff Members</p>
+                    <p class="text-slate-500 text-xs font-bold uppercase">Staff</p>
                     <h3 id="stat-users" class="text-4xl font-black text-purple-400">0</h3>
                 </div>
             </div>
         </section>
 
         <section id="view-books" class="hidden flex-1 glass rounded-3xl p-8 flex flex-col overflow-hidden">
-            <h2 class="text-2xl font-bold mb-8">Inventory</h2>
-            <div class="overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Inventory</h2>
+                <div class="flex gap-4">
+                    <input type="text" id="isbn-search" onkeyup="filterByISBN()" placeholder="Search ISBN..." class="input-field text-sm w-64">
+                    <button id="btn-add-book" onclick="openModal('add-book-modal')" class="hidden bg-emerald-600 px-5 py-2 rounded-xl font-bold text-xs hover:bg-emerald-500 transition">+ Add Asset</button>
+                    <button id="btn-issue" onclick="openModal('issue-modal')" class="hidden bg-indigo-600 px-5 py-2 rounded-xl font-bold text-xs hover:bg-indigo-500 transition">Issue</button>
+                </div>
+            </div>
+            <div class="overflow-y-auto flex-1">
                 <table class="w-full text-left">
+                    <thead class="text-[10px] uppercase text-slate-500 font-bold sticky top-0 bg-[#020617] z-10">
+                        <tr><th class="p-4">Title</th><th class="p-4">ISBN</th><th class="p-4">Status</th><th class="p-4">Issued To</th><th id="th-actions" class="p-4 hidden text-right">Actions</th></tr>
+                    </thead>
                     <tbody id="book-rows" class="divide-y divide-white/5"></tbody>
                 </table>
             </div>
         </section>
+
+        <section id="view-users" class="hidden flex-1 glass rounded-3xl p-8 overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-6">Staff Control Registry</h2>
+            <div id="staff-list" class="grid grid-cols-2 gap-6"></div>
+        </section>
     </main>
 
+    <div id="add-book-modal" class="modal fixed inset-0 z-[3000] items-center justify-center p-6">
+        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md">
+            <h3 class="text-xl font-bold mb-6">New Resource</h3>
+            <div class="space-y-4">
+                <input type="text" id="new-book-title" placeholder="Title" class="input-field w-full">
+                <input type="text" id="new-book-isbn" placeholder="ISBN" class="input-field w-full">
+                <div class="flex gap-3 pt-4"><button onclick="closeModal('add-book-modal')" class="flex-1 py-3 text-slate-400 font-bold">Cancel</button><button onclick="submitAddBook()" class="flex-1 bg-emerald-600 rounded-xl font-bold">Save</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="issue-modal" class="modal fixed inset-0 z-[3000] items-center justify-center p-6">
+        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md">
+            <h3 class="text-xl font-bold mb-6">Issue Resource</h3>
+            <div class="space-y-4">
+                <select id="issue-book-select" class="input-field w-full bg-slate-950"></select>
+                <input type="text" id="issue-student" placeholder="Recipient Name" class="input-field w-full">
+                <div class="flex gap-3 pt-4"><button onclick="closeModal('issue-modal')" class="flex-1 py-3 text-slate-400 font-bold">Cancel</button><button onclick="submitIssue()" class="flex-1 bg-indigo-600 rounded-xl font-bold">Confirm</button></div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // REPLACE WITH YOUR ACTUAL PERMANENT CREDENTIALS
         const SUPABASE_URL = "https://cuhkmivwjghclqlkehys.supabase.co"; 
         const SUPABASE_KEY = "sb_publishable_IaqT2F1n6UlUZ-vhIAfOWA_O1gNvDiu";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let userProfile = null;
+        let allBooks = [];
 
         window.onload = async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (session) fetchProfile(session.user);
         };
 
-        // --- AUTH LOGIC ---
-
-        function toggleAuth(showReg) {
-            document.getElementById('login-form').classList.toggle('hidden', showReg);
-            document.getElementById('register-form').classList.toggle('hidden', !showReg);
-        }
-
-        async function handleRegister() {
-            const email = document.getElementById('reg-email').value;
-            const password = document.getElementById('reg-pass').value;
-            const fullName = document.getElementById('reg-name').value;
-            const role = document.getElementById('reg-role').value;
-            const btn = document.getElementById('reg-btn');
-
-            if(!email || !password || !fullName) return alert("Please fill all fields");
-
-            btn.innerText = "Creating Account...";
-            
-            // Sign up with Metadata so the Trigger can pick up full_name and role
-            const { data, error } = await _supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: { full_name: fullName, role: role }
-                }
-            });
-
-            if (error) {
-                alert(error.message);
-                btn.innerText = "Create Account";
-            } else {
-                alert("Registration successful! You can now sign in.");
-                toggleAuth(false);
-            }
-        }
-
         async function handleLogin() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-pass').value;
-            const btn = document.getElementById('login-btn');
-            
-            btn.innerText = "Authenticating...";
-            const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
-
-            if (error) {
-                alert(error.message);
-                btn.innerText = "Sign In";
-            } else {
-                fetchProfile(data.user);
-            }
+            const e = document.getElementById('login-email').value;
+            const p = document.getElementById('login-pass').value;
+            const { data, error } = await _supabase.auth.signInWithPassword({ email: e, password: p });
+            if (error) alert(error.message); else fetchProfile(data.user);
         }
 
-        async function fetchProfile(authUser) {
-            const { data, error } = await _supabase.from('profiles').select('*').eq('id', authUser.id).single();
-            if (data) {
-                userProfile = data;
-                renderApp();
-            }
+        async function fetchProfile(u) {
+            const { data } = await _supabase.from('profiles').select('*').eq('id', u.id).single();
+            if (data) { userProfile = data; renderApp(); }
         }
 
         function renderApp() {
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('sidebar').classList.remove('hidden');
             document.getElementById('main-content').classList.remove('hidden');
-
             document.getElementById('user-display-name').innerText = userProfile.full_name;
             document.getElementById('user-display-role').innerText = userProfile.role;
             document.getElementById('user-initial').innerText = userProfile.full_name.charAt(0);
 
-            if (userProfile.role === 'Admin') document.getElementById('nav-admin').classList.remove('hidden');
+            if (userProfile.role === 'Admin') {
+                document.getElementById('nav-admin').classList.remove('hidden');
+                document.getElementById('btn-add-book').classList.remove('hidden');
+            }
+            if (userProfile.role === 'Admin' || userProfile.role === 'Librarian') {
+                document.getElementById('btn-issue').classList.remove('hidden');
+                document.getElementById('th-actions').classList.remove('hidden');
+            }
             fetchData();
         }
 
         async function fetchData() {
-            const { data: books } = await _supabase.from('books').select('*');
-            const { data: staff } = await _supabase.from('profiles').select('*');
-            document.getElementById('stat-books').innerText = books?.length || 0;
+            const { data: books } = await _supabase.from('books').select('*').order('created_at', { ascending: false });
+            const { data: staff } = await _supabase.from('profiles').select('*').order('full_name');
+            allBooks = books || [];
+            document.getElementById('stat-books').innerText = allBooks.length;
             document.getElementById('stat-users').innerText = staff?.length || 0;
-            document.getElementById('book-rows').innerHTML = books?.map(b => `
-                <tr><td class="p-4 font-bold">${b.title}</td><td class="p-4 text-xs opacity-50">${b.status}</td></tr>
-            `).join('') || '';
+            renderBooks(allBooks);
+            renderStaff(staff || []);
         }
 
-        async function handleLogout() {
-            await _supabase.auth.signOut();
-            window.location.reload();
+        function renderBooks(list) {
+            const isStaff = (userProfile.role === 'Admin' || userProfile.role === 'Librarian');
+            document.getElementById('book-rows').innerHTML = list.map(b => `
+                <tr class="hover:bg-white/[0.02] transition">
+                    <td class="p-4 font-bold text-sm">${b.title}</td>
+                    <td class="p-4 text-xs font-mono opacity-50">${b.isbn || 'N/A'}</td>
+                    <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold ${b.status === 'AVAILABLE' ? 'text-emerald-400 bg-emerald-400/10' : 'text-indigo-400 bg-indigo-400/10'}">${b.status}</span></td>
+                    <td class="p-4 text-xs opacity-60">${b.issued_to || '-'}</td>
+                    ${isStaff ? `<td class="p-4 text-right space-x-2">
+                        ${b.status === 'LOANED' ? `<button onclick="handleReturn(${b.id})" class="text-[10px] font-bold text-emerald-400 border border-emerald-400/30 px-3 py-1 rounded-lg hover:bg-emerald-500 hover:text-white transition">Return</button>` : ''}
+                        ${userProfile.role === 'Admin' ? `<button onclick="handleDeleteBook(${b.id})" class="text-[10px] font-bold text-red-400 border border-red-400/30 px-3 py-1 rounded-lg hover:bg-red-500 hover:text-white transition">Delete</button>` : ''}
+                    </td>` : ''}
+                </tr>
+            `).join('');
+            document.getElementById('issue-book-select').innerHTML = '<option value="">Select Asset...</option>' + allBooks.filter(b => b.status === 'AVAILABLE').map(b => `<option value="${b.id}">${b.title}</option>`).join('');
         }
 
-        function switchView(id) {
-            ['dash', 'books'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
-            document.getElementById(`view-${id}`).classList.remove('hidden');
+        function renderStaff(staff) {
+            const isAdmin = (userProfile.role === 'Admin');
+            document.getElementById('staff-list').innerHTML = staff.map(s => `
+                <div class="glass p-6 rounded-[2rem] border border-white/5 flex flex-col gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-600/20 flex items-center justify-center font-bold text-indigo-400">${s.full_name.charAt(0)}</div>
+                        <div class="flex-1">
+                            <p class="font-bold">${s.full_name}</p>
+                            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-black">${s.role}</p>
+                        </div>
+                    </div>
+                    ${isAdmin ? `
+                        <div class="pt-4 border-t border-white/5 flex flex-col gap-2">
+                            <p class="text-[10px] text-slate-500 font-bold uppercase">Update Role</p>
+                            <select onchange="handleRoleChange('${s.id}', this.value)" ${s.id === userProfile.id ? 'disabled' : ''} class="input-field w-full text-xs bg-slate-950 cursor-pointer">
+                                <option value="Teacher" ${s.role === 'Teacher' ? 'selected' : ''}>Teacher</option>
+                                <option value="Librarian" ${s.role === 'Librarian' ? 'selected' : ''}>Librarian</option>
+                                <option value="Admin" ${s.role === 'Admin' ? 'selected' : ''}>Admin</option>
+                            </select>
+                            ${s.id === userProfile.id ? '<p class="text-[8px] text-indigo-400/50">Cannot change your own role</p>' : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
         }
+
+        async function handleRoleChange(profileId, newRole) {
+            if(!confirm(`Confirm changing this user's role to ${newRole}?`)) return fetchData();
+            const { error } = await _supabase.from('profiles').update({ role: newRole }).eq('id', profileId);
+            if (error) alert(error.message); else fetchData();
+        }
+
+        async function submitAddBook() {
+            const t = document.getElementById('new-book-title').value;
+            const i = document.getElementById('new-book-isbn').value;
+            const { error } = await _supabase.from('books').insert([{ title: t, isbn: i, status: 'AVAILABLE' }]);
+            if (!error) { closeModal('add-book-modal'); fetchData(); }
+        }
+
+        async function submitIssue() {
+            const bid = document.getElementById('issue-book-select').value;
+            const s = document.getElementById('issue-student').value;
+            const { error } = await _supabase.from('books').update({ status: 'LOANED', issued_to: s }).eq('id', bid);
+            if (!error) { closeModal('issue-modal'); fetchData(); }
+        }
+
+        async function handleReturn(id) { await _supabase.from('books').update({ status: 'AVAILABLE', issued_to: null }).eq('id', id); fetchData(); }
+        async function handleDeleteBook(id) { if(confirm("Delete asset?")) { await _supabase.from('books').delete().eq('id', id); fetchData(); } }
+        function filterByISBN() { const q = document.getElementById('isbn-search').value.toLowerCase(); renderBooks(allBooks.filter(b => (b.isbn || '').toLowerCase().includes(q))); }
+        function toggleAuth(s) { document.getElementById('login-form').classList.toggle('hidden', s); document.getElementById('register-form').classList.toggle('hidden', !s); }
+        async function handleLogout() { await _supabase.auth.signOut(); window.location.reload(); }
+        function switchView(id) { ['dash', 'books', 'users'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); document.getElementById(`view-${id}`).classList.remove('hidden'); }
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
     </script>
 </body>
 </html>
