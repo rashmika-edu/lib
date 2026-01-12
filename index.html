@@ -3,265 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina Pro | Enterprise Edition</title>
+    <title>Lumina Pro | Realtime School Library Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
     <style>
-        :root {
-            --glass: rgba(255, 255, 255, 0.08);
-            --border: rgba(255, 255, 255, 0.1);
-            --accent: #6366f1;
-        }
-
         body {
-            font-family: 'Inter', sans-serif;
-            background: radial-gradient(circle at top right, #1e1b4b, #020617);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #020617;
             color: #f8fafc;
             height: 100vh;
             overflow: hidden;
         }
 
-        .glass-panel {
-            background: var(--glass);
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border: 1px solid var(--border);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
         }
 
-        .nav-item.active {
-            background: rgba(99, 102, 241, 0.2);
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .input-field {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
-            border-right: 3px solid var(--accent);
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            outline: none;
+            transition: all 0.3s;
         }
 
-        /* Modal Overlay */
-        .modal-bg {
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
-        }
+        .input-field:focus { border-color: #6366f1; ring: 2px ring-indigo-500/20; }
 
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .toast {
-            animation: slideIn 0.3s ease-out;
-        }
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-view { animation: fadeIn 0.4s ease-out forwards; }
+        
+        .modal { backdrop-filter: blur(10px); display: none; }
+        .modal.active { display: flex; }
     </style>
 </head>
-<body class="flex p-4 md:p-6 gap-6">
+<body class="flex p-6 gap-6">
 
-    <div id="login-overlay" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950">
-        <div class="glass-panel p-12 rounded-[3rem] w-full max-w-md text-center border-t border-white/20">
-            <h1 class="text-4xl font-bold mb-2">Lumina<span class="text-indigo-500">.</span></h1>
-            <p class="text-slate-400 mb-8">Select Portal Access</p>
-            <div class="space-y-4">
-                <select id="role-auth" class="w-full bg-slate-900 border border-slate-800 p-4 rounded-2xl outline-none focus:ring-2 ring-indigo-500 transition">
-                    <option value="Admin">Administrator</option>
-                    <option value="Librarian">Librarian</option>
-                    <option value="Teacher">Teacher</option>
-                    <option value="Principal">Principal</option>
-                </select>
-                <button onclick="authEntry()" class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-indigo-600/20">Initialize Session</button>
-            </div>
+    <div id="config-overlay" class="fixed inset-0 z-[1000] bg-slate-950 flex items-center justify-center p-6">
+        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md border-t border-white/20 text-center">
+            <h2 class="text-2xl font-bold mb-2">Connect Supabase</h2>
+            <p class="text-slate-400 text-sm mb-6">Enter your project credentials to enable Realtime</p>
+            <input type="text" id="supa-url" placeholder="Supabase Project URL" class="input-field w-full mb-3 text-xs">
+            <input type="password" id="supa-key" placeholder="Anon Public API Key" class="input-field w-full mb-6 text-xs">
+            <button onclick="initSupabase()" class="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-slate-200 transition">Connect & Launch</button>
         </div>
     </div>
 
-    <aside class="glass-panel w-72 rounded-[2.5rem] flex flex-col p-8 shrink-0 relative overflow-hidden">
-        <div class="absolute -top-10 -left-10 w-32 h-32 bg-indigo-600/20 blur-3xl"></div>
-        <div class="flex items-center gap-3 mb-12 relative">
-            <div class="w-8 h-8 bg-indigo-500 rounded-lg"></div>
-            <span class="text-xl font-black tracking-tighter italic">LUMINA PRO</span>
+    <aside class="glass w-72 rounded-[2rem] flex flex-col p-8 shrink-0">
+        <div class="flex items-center gap-3 mb-12">
+            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/40">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            </div>
+            <span class="text-xl font-bold tracking-tight">Lumina Pro</span>
         </div>
 
-        <nav class="flex-1 space-y-2 relative">
-            <button onclick="nav('dash')" id="nav-dash" class="nav-item active w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-400 transition">
-                Dashboard
-            </button>
-            <button onclick="nav('books')" id="nav-books" class="nav-item w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-400 transition">
-                Inventory
-            </button>
-            <button onclick="nav('users')" id="nav-users" class="nav-item hidden w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-400 transition">
-                User Management
-            </button>
+        <nav class="flex-1 space-y-2">
+            <button onclick="switchView('dash')" class="w-full flex items-center gap-4 px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Dashboard</button>
+            <button onclick="switchView('books')" class="w-full flex items-center gap-4 px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Inventory</button>
+            <button id="admin-nav" onclick="switchView('users')" class="hidden w-full flex items-center gap-4 px-5 py-3 rounded-xl hover:bg-white/5 transition text-slate-400 hover:text-white">Register Users</button>
         </nav>
 
-        <div class="pt-6 border-t border-white/10 relative">
-            <p class="text-[10px] text-slate-500 uppercase font-bold mb-4">Current Session</p>
+        <div class="pt-6 border-t border-white/5 mt-auto">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center font-bold" id="avatar-icon">?</div>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-xs" id="user-initial">?</div>
                 <div>
-                    <p class="text-sm font-bold" id="display-name">Loading...</p>
-                    <p class="text-[10px] text-indigo-400 font-bold uppercase" id="display-role">Role</p>
+                    <p class="text-sm font-bold truncate w-32" id="user-name">Guest User</p>
+                    <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest" id="user-role">Role</p>
                 </div>
             </div>
-            <button onclick="location.reload()" class="mt-8 text-xs text-rose-400 font-bold hover:text-rose-300">Terminate Session</button>
         </div>
     </aside>
 
     <main class="flex-1 flex flex-col gap-6 overflow-hidden">
         
-        <section id="page-dash" class="flex-1 space-y-6 overflow-y-auto">
-            <div class="flex justify-between items-end">
-                <h2 class="text-3xl font-bold">Insights Dashboard</h2>
-                <p class="text-slate-400 text-sm" id="live-date"></p>
+        <section id="view-dash" class="animate-view space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-3xl font-extrabold">System Insights</h2>
+                <div class="px-4 py-2 glass rounded-full text-xs font-bold text-emerald-400 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Supabase Realtime Active
+                </div>
             </div>
-            
             <div class="grid grid-cols-3 gap-6">
-                <div class="glass-panel p-8 rounded-[2rem]">
-                    <p class="text-slate-500 text-xs font-bold uppercase">Circulation</p>
-                    <p class="text-4xl font-bold mt-2">1,284 <span class="text-xs text-emerald-400 font-normal">+12%</span></p>
+                <div class="glass p-8 rounded-3xl">
+                    <p class="text-slate-500 text-xs font-bold uppercase mb-1">Total Assets</p>
+                    <h3 class="text-4xl font-black" id="stat-books">0</h3>
                 </div>
-                <div class="glass-panel p-8 rounded-[2rem]">
-                    <p class="text-slate-500 text-xs font-bold uppercase">New Registrations</p>
-                    <p class="text-4xl font-bold mt-2">48</p>
+                <div class="glass p-8 rounded-3xl">
+                    <p class="text-slate-500 text-xs font-bold uppercase mb-1">Active Loans</p>
+                    <h3 class="text-4xl font-black text-indigo-400">0</h3>
                 </div>
-                <div class="glass-panel p-8 rounded-[2rem]">
-                    <p class="text-slate-500 text-xs font-bold uppercase">System Uptime</p>
-                    <p class="text-4xl font-bold mt-2 text-indigo-400">99.9%</p>
-                </div>
-            </div>
-
-            <div class="glass-panel rounded-[2.5rem] p-8 flex-1">
-                <h3 class="font-bold mb-6">Real-time Activity Feed</h3>
-                <div class="space-y-4" id="activity-feed">
-                    <div class="p-4 bg-white/5 rounded-2xl flex justify-between border border-white/5">
-                        <span class="text-sm">System: Backup successfully completed.</span>
-                        <span class="text-xs text-slate-500">Just now</span>
-                    </div>
+                <div class="glass p-8 rounded-3xl">
+                    <p class="text-slate-500 text-xs font-bold uppercase mb-1">System Users</p>
+                    <h3 class="text-4xl font-black text-purple-400" id="stat-users">0</h3>
                 </div>
             </div>
         </section>
 
-        <section id="page-books" class="hidden flex-1 glass-panel rounded-[2.5rem] p-10 flex flex-col">
-            <div class="flex justify-between items-center mb-10">
-                <h2 class="text-3xl font-bold">Catalog Management</h2>
-                <button onclick="showModal('book-modal')" id="add-book-btn" class="hidden bg-indigo-600 px-8 py-3 rounded-2xl font-bold hover:bg-indigo-500 transition shadow-lg shadow-indigo-500/20 text-sm">
-                    + Add New Asset
+        <section id="view-books" class="hidden animate-view flex-1 glass rounded-3xl p-8 flex flex-col overflow-hidden">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold">Inventory & Circulation</h2>
+                <button id="lib-action" onclick="openModal('issue-modal')" class="hidden bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-bold text-sm transition shadow-lg shadow-indigo-600/20">
+                    + Issue Book
                 </button>
             </div>
-            <div class="overflow-y-auto">
-                <table class="w-full text-left border-separate border-spacing-y-3">
-                    <tr class="text-slate-500 text-[10px] uppercase font-bold tracking-widest">
-                        <th class="px-6 pb-2">Resource</th>
-                        <th class="px-6 pb-2">Accession No.</th>
-                        <th class="px-6 pb-2">Status</th>
-                        <th class="px-6 pb-2 text-right">Action</th>
-                    </tr>
-                    <tbody id="book-list">
+            <div class="overflow-y-auto flex-1">
+                <table class="w-full text-left">
+                    <thead class="text-slate-500 text-[10px] uppercase font-bold tracking-widest">
+                        <tr><th class="p-4">Resource Title</th><th class="p-4">ISBN</th><th class="p-4">Status</th></tr>
+                    </thead>
+                    <tbody id="book-rows" class="divide-y divide-white/5">
                         </tbody>
                 </table>
             </div>
         </section>
 
-        <section id="page-users" class="hidden flex-1 glass-panel rounded-[2.5rem] p-10 flex flex-col">
-            <h2 class="text-3xl font-bold mb-10">Staff & Faculty Directory</h2>
-            <div class="grid grid-cols-2 gap-6" id="user-list">
+        <section id="view-users" class="hidden animate-view flex-1 glass rounded-3xl p-8 flex flex-col">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold">Institutional Staff Registry</h2>
+                <button onclick="openModal('user-modal')" class="bg-purple-600 hover:bg-purple-500 px-6 py-3 rounded-xl font-bold text-sm transition">
+                    + Register New Staff
+                </button>
+            </div>
+            <div id="user-grid" class="grid grid-cols-2 gap-4">
                 </div>
         </section>
 
     </main>
 
-    <div id="book-modal" class="hidden fixed inset-0 z-[200] modal-bg flex items-center justify-center p-6">
-        <div class="glass-panel p-10 rounded-[2.5rem] w-full max-w-lg border border-white/20">
-            <h3 class="text-2xl font-bold mb-6 text-center">New Library Asset</h3>
+    <div id="issue-modal" class="modal fixed inset-0 z-[500] items-center justify-center p-6">
+        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md">
+            <h3 class="text-xl font-bold mb-6">Issue Library Resource</h3>
             <div class="space-y-4">
-                <input type="text" placeholder="Book Title" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none focus:border-indigo-500">
-                <input type="text" placeholder="ISBN Number" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none focus:border-indigo-500">
-                <div class="flex gap-4">
-                    <button onclick="closeModal('book-modal')" class="flex-1 py-4 text-slate-400 font-bold">Cancel</button>
-                    <button onclick="closeModal('book-modal')" class="flex-1 bg-indigo-600 rounded-xl font-bold">Save Asset</button>
+                <select id="issue-book-id" class="input-field w-full bg-slate-900">
+                    <option>Select Book from Inventory...</option>
+                </select>
+                <input type="text" id="student-name" placeholder="Student Full Name" class="input-field w-full">
+                <div class="flex gap-3 pt-4">
+                    <button onclick="closeModal('issue-modal')" class="flex-1 py-3 text-slate-400 font-bold">Cancel</button>
+                    <button onclick="handleIssue()" class="flex-1 bg-indigo-600 rounded-xl font-bold">Confirm Issue</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="toast-container" class="fixed bottom-10 right-10 z-[300] space-y-3"></div>
+    <div id="user-modal" class="modal fixed inset-0 z-[500] items-center justify-center p-6">
+        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md">
+            <h3 class="text-xl font-bold mb-6 text-purple-400">Add Staff Member</h3>
+            <div class="space-y-4">
+                <input type="text" id="reg-name" placeholder="Full Name" class="input-field w-full">
+                <select id="reg-role" class="input-field w-full bg-slate-900">
+                    <option value="Librarian">Librarian</option>
+                    <option value="Teacher">Teacher</option>
+                    <option value="Principal">Principal</option>
+                </select>
+                <input type="text" id="reg-dept" placeholder="Department" class="input-field w-full">
+                <div class="flex gap-3 pt-4">
+                    <button onclick="closeModal('user-modal')" class="flex-1 py-3 text-slate-400 font-bold">Cancel</button>
+                    <button onclick="handleRegister()" class="flex-1 bg-purple-600 rounded-xl font-bold">Create Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        const state = {
-            role: '',
-            books: [
-                { id: 'BK-101', title: 'The Silent Patient', status: 'Available' },
-                { id: 'BK-102', title: 'Cosmos', status: 'Loaned' },
-                { id: 'BK-103', title: 'Data Structures 101', status: 'Available' }
-            ],
-            staff: [
-                { name: 'Dr. Aris Thorne', role: 'Principal', dept: 'Administration' },
-                { name: 'Sarah Jenkins', role: 'Librarian', dept: 'Learning Center' },
-                { name: 'Marcus Wu', role: 'Teacher', dept: 'Mathematics' }
-            ]
-        };
+        // Configuration & State
+let supabase;
+const state = { books: [], users: [], stats: { total: 0, loaned: 0 } };
 
-        function authEntry() {
-            state.role = document.getElementById('role-auth').value;
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('display-name').innerText = `Pro User - ${state.role.charAt(0)}`;
-            document.getElementById('display-role').innerText = state.role;
-            document.getElementById('avatar-icon').innerText = state.role.charAt(0);
-            document.getElementById('live-date').innerText = new Date().toDateString();
+// Initialize Connection
+async function initSupabase() {
+    const url = document.getElementById('https://cuhkmivwjghclqlkehys.supabase.co').value;
+    const key = document.getElementById('sb_publishable_IaqT2F1n6UlUZ-vhIAfOWA_O1gNvDiu').value;
+    
+    try {
+        supabase = window.supabase.createClient(url, key);
+        document.getElementById('config-overlay').style.display = 'none';
+        
+        // Setup Realtime Listeners
+        subscribeToChanges();
+        fetchInitialData();
+        showToast("Connected to Supabase Realtime");
+    } catch (error) {
+        alert("Connection failed. Check your URL/Key.");
+    }
+}
 
-            // Access Control Logic
-            if(state.role === 'Admin') {
-                document.getElementById('nav-users').classList.remove('hidden');
-                document.getElementById('add-book-btn').classList.remove('hidden');
-            } else if (state.role === 'Librarian') {
-                document.getElementById('add-book-btn').classList.remove('hidden');
-            }
+// Realtime Subscription
+function subscribeToChanges() {
+    supabase
+        .channel('schema-db-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'books' }, payload => {
+            fetchInitialData(); // Refresh UI on any change
+            showToast("Database Updated in Realtime");
+        })
+        .subscribe();
+}
 
-            renderBooks();
-            renderUsers();
-            showToast(`Access Granted: ${state.role} Level`);
-        }
+// 1. Feature: Librarian Issue Book
+async function handleIssue() {
+    const bookId = document.getElementById('issue-book-id').value;
+    const student = document.getElementById('student-name').value;
 
-        function nav(page) {
-            ['dash', 'books', 'users'].forEach(p => {
-                document.getElementById(`page-${p}`).classList.add('hidden');
-                document.getElementById(`nav-${p}`).classList.remove('active');
-            });
-            document.getElementById(`page-${page}`).classList.remove('hidden');
-            document.getElementById(`nav-${page}`).classList.add('active');
-        }
+    const { error: transError } = await supabase
+        .from('transactions')
+        .insert([{ book_id: bookId, student_name: student }]);
 
-        function renderBooks() {
-            const container = document.getElementById('book-list');
-            container.innerHTML = state.books.map(b => `
-                <tr class="bg-white/5 rounded-2xl overflow-hidden">
-                    <td class="px-6 py-4 font-bold">${b.title}</td>
-                    <td class="px-6 py-4 text-slate-500 font-mono text-xs">${b.id}</td>
-                    <td class="px-6 py-4">
-                        <span class="text-[10px] font-bold uppercase px-2 py-1 rounded ${b.status === 'Available' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}">${b.status}</span>
-                    </td>
-                    <td class="px-6 py-4 text-right">
-                        <button class="text-indigo-400 text-xs font-bold">Manage</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
+    const { error: bookError } = await supabase
+        .from('books')
+        .update({ status: 'Loaned' })
+        .eq('id', bookId);
 
-        function renderUsers() {
-            const container = document.getElementById('user-list');
-            container.innerHTML = state.staff.map(u => `
-                <div class="glass-panel p-6 rounded-3xl flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center">👤</div>
-                    <div>
-                        <p class="font-bold">${u.name}</p>
-                        <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">${u.role} | ${u.dept}</p>
-                    </div>
-                </div>
-            `).join('');
-        }
+    if (!transError && !bookError) {
+        closeModal('issue-modal');
+        showToast(`Book successfully issued to ${student}`);
+    }
+}
 
-        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+// 2. Feature: Admin Register User
+async function handleRegister() {
+    const name = document.getElementById('reg-name').value;
+    const role = document.getElementById('reg-role').value;
+    const dept = document.getElementById('reg-dept').value;
 
-        function showToast(msg) {
-            const t = document.createElement('div');
-            t.className = "toast glass-panel px-6 py-4 rounded-2xl border-l-4 border-indigo-500 text-sm font-bold shadow-2xl";
-            t.innerText = msg;
-            document.getElementById('toast-container').appendChild(t);
-            setTimeout(() => t.remove(), 3000);
+    // Note: In production, you would use supabase.auth.signUp
+    // This adds the metadata to the profiles table
+    const { error } = await supabase
+        .from('profiles')
+        .insert([{ full_name: name, role: role, department: dept }]);
+
+    if (!error) {
+        closeModal('user-modal');
+        showToast(`User ${name} registered as ${role}`);
+        fetchInitialData();
+    }
+}
+
+async function fetchInitialData() {
+    const { data: books } = await supabase.from('books').select('*');
+    const { data: profiles } = await supabase.from('profiles').select('*');
+    
+    // Update Dashboard Stats
+    document.getElementById('stat-books').innerText = books.length;
+    document.getElementById('stat-users').innerText = profiles.length;
+    
+    // Render Book Table
+    const bookRows = document.getElementById('book-rows');
+    bookRows.innerHTML = books.map(book => `
+        <tr class="hover:bg-white/5 transition">
+            <td class="p-4 font-bold text-slate-200">${book.title}</td>
+            <td class="p-4 text-xs font-mono text-slate-500">${book.isbn}</td>
+            <td class="p-4">
+                <span class="px-3 py-1 rounded-full text-[10px] font-bold ${book.status === 'Available' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}">
+                    ${book.status.toUpperCase()}
+                </span>
+            </td>
+        </tr>
+    `).join('');
         }
     </script>
 </body>
