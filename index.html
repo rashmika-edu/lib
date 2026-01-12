@@ -294,30 +294,31 @@
             if (error) alert(error.message); else fetchData();
         }
 
-        async function submitAddBook() {
-            const titleInput = document.getElementById('new-book-title');
-            const isbnInput = document.getElementById('new-book-isbn');
-            const t = titleInput.value;
-            const i = isbnInput.value;
+async function submitAddBook() {
+    const titleInput = document.getElementById('new-book-title');
+    const isbnInput = document.getElementById('new-book-isbn');
+    const t = titleInput.value;
+    const i = isbnInput.value;
 
-            if(!t) return alert("Resource Title is required.");
+    if(!t) return alert("Resource Title is required.");
 
-            // Removed user_id as it doesn't exist in your database schema
-            const { error } = await _supabase.from('books').insert([{ 
-                title: t, 
-                isbn: i, 
-                status: 'AVAILABLE'
-            }]);
+    // Now that the column exists, we can safely include user_id
+    const { error } = await _supabase.from('books').insert([{ 
+        title: t, 
+        isbn: i, 
+        status: 'AVAILABLE',
+        user_id: userProfile.id // Tracks who added the book
+    }]);
 
-            if (error) {
-                alert("Failed to add book: " + error.message);
-            } else { 
-                titleInput.value = '';
-                isbnInput.value = '';
-                closeModal('add-book-modal'); 
-                fetchData(); 
-            }
-        }
+    if (error) {
+        alert("Failed to add book: " + error.message);
+    } else { 
+        titleInput.value = '';
+        isbnInput.value = '';
+        closeModal('add-book-modal'); 
+        fetchData(); 
+    }
+}
 
         async function submitIssue() {
             const bid = document.getElementById('issue-book-select').value;
